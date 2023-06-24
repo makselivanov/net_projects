@@ -12,7 +12,7 @@ import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-const val possiblityOfLose = 0.3 //TODO
+const val possiblityOfLose = 0.3
 const val helloPrefix     = "HELOO:"
 const val dataPrefix      = "DATAA:"
 const val endOfFilePrefix = "EOFIL:"
