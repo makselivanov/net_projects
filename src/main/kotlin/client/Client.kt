@@ -1,6 +1,5 @@
 package client
 
-import io.ktor.util.cio.*
 import org.slf4j.LoggerFactory
 import saw_protocol.StopAndWaitProtocol
 import saw_protocol.serverPort
@@ -20,7 +19,7 @@ fun main() {
     logger.info("Sent file to server")
 
     //We sent data, lets get it back from server
-    val (typeOfData, receive) = protocolManager.receive()
+    val (_, receive) = protocolManager.receive()
     //Let's check that data is equal
     if (receive.contentEquals(data)) {
         println("Great, sent and received data is equal!")
