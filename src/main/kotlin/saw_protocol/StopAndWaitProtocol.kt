@@ -8,9 +8,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
+import kotlin.math.min
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+
+//TODO change checksum?
 
 const val possiblityOfLose = 0.3
 const val helloPrefix     = "HELOO:"
@@ -27,10 +30,24 @@ enum class TypeData {
 }
 
 const val serverPort = 8888
+
+fun getControlSum(data: ByteArray): UShort {
+    return data.asIterable().chunked(Short.SIZE_BYTES) {buffer -> //Short is 2 byte
+        var result: UInt = 0u
+        for (i in 0 until min(Short.SIZE_BYTES, buffer.size)) {
+            result += (buffer[i].toUByte()).toUInt() shl (8 * (Short.SIZE_BYTES - 1 - i))
+        }
+        result
+    }.sum().toUShort()
+}
+
+fun checkCorruption(data: ByteArray, controlSum: UShort): Boolean {
+    return (getControlSum(data) + controlSum.inv()).toUShort() != UShort.MAX_VALUE
+}
+
 class StopAndWaitProtocol(name: String = "") {
     data class BufferPacket(
-        val prefixHash: Int,
-        val dataHash: Int,
+        val controlSum: UShort,
         val header: String,
         val data: ByteArray,
     )
@@ -88,8 +105,8 @@ class StopAndWaitProtocol(name: String = "") {
      * 6 byte is special prefix for type of data (Text)
      * Data                      (Text/Bytes)
      */
-    private fun corrupt(message: BufferPacket): Boolean { /// Check that last 4 bytes is not hash
-        return message.dataHash != message.data.contentHashCode() || message.prefixHash != message.header.hashCode()
+    private fun corrupt(message: BufferPacket): Boolean {
+        return checkCorruption(message.header.toByteArray() + message.data, message.controlSum)
     }
 
     private fun isMessageACK(message: BufferPacket): Boolean { // Check that first 4 bytes is special prefix for ACK
@@ -126,25 +143,30 @@ class StopAndWaitProtocol(name: String = "") {
             TypeData.UNKNOWN
         }
     }
+    private fun getControlSum(header: String, data: ByteArray): UShort {
+        return getControlSum(header.toByteArray() + data)
+    }
 
+
+    @OptIn(ExperimentalUnsignedTypes::class)
     private fun makePacket(prefix: String, data: ByteArray = ByteArray(0)): ByteReadPacket {
+        assert(headerSize == 2 * Int.SIZE_BYTES + sendPrefix.length + 1 + helloPrefix.length)
         assert(prefix.length == sendPrefix.length + 1 + dataPrefix.length)
         return buildPacket {
-            writeInt(prefix.hashCode())
-            writeInt(data.contentHashCode())
+            writeUShort(getControlSum(prefix, data))
             append(prefix)
             writeFully(data)
         }
     }
 
+    @OptIn(ExperimentalUnsignedTypes::class)
     private fun parsePacket(packet: ByteReadPacket): BufferPacket {
-        val prefixHash = packet.readInt()
-        val dataHash = packet.readInt()
+        val controlSum = packet.readUShort()
         assert(sendPrefix.length == recvPrefix.length && dataPrefix.length == helloPrefix.length)
         val header = packet.readTextExact(sendPrefix.length + 1 + dataPrefix.length)
         val data = ByteArray(packet.remaining.toInt())
         packet.readFully(data)
-        return BufferPacket(prefixHash, dataHash, header, data)
+        return BufferPacket(controlSum, header, data)
     }
 
     private suspend fun sendSocket(datagram: Datagram) {
@@ -164,7 +186,7 @@ class StopAndWaitProtocol(name: String = "") {
         if (toAddress == null) {
             return ByteArray(0)
         }
-        val buffer = BufferPacket(prefix.hashCode(), data.contentHashCode(), prefix, data)
+        val buffer = BufferPacket(getControlSum(prefix, data), prefix, data) // For debug
         logger.info("Starting send package with size ${data.size} bytes to address \"${toAddress}\" with timer $timer")
         return runBlocking {
             var response: ByteArray? = null
@@ -187,7 +209,7 @@ class StopAndWaitProtocol(name: String = "") {
                             break
                         }
                     }
-                } ?: logger.info("Request timed out")
+                } ?: logger.info("Request timed out or closed")
                 if (response != null) {
                     break
                 }
@@ -259,10 +281,9 @@ class StopAndWaitProtocol(name: String = "") {
                     logger.info("Package is corrupted or invalid")
                     logger.debug("Package is: corrupted=${corrupt(message)} | isNotSNDhead=${!isMessageSent(message)} | isNotCorrectIndex=${getIndexFromMessage(message) != index}")
                     logger.debug("Print local/sent data:\n" +
-                            "HeaderHash: local=${message.header.hashCode()} | sent=${message.prefixHash}\n" +
-                            "  DataHash: local=${message.data.contentHashCode()} | sent=${message.dataHash}\n" +
-                            "     Index: local=${index} | sent=${getIndexFromMessage(message)}\n" +
-                            "      Data: ${message.data}")
+                            "CheckSum: local=${getControlSum(message.header, message.data)} | sent=${message.controlSum}\n" +
+                            "   Index: local=${index} | sent=${getIndexFromMessage(message)}\n" +
+                            "    Data: ${message.data}")
                     logger.debug("")
                 }
 
