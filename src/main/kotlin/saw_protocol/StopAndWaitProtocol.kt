@@ -13,8 +13,6 @@ import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-//TODO change checksum?
-
 const val possibilityOfLose = 0.3
 const val helloPrefix     = "HELOO:"
 const val dataPrefix      = "DATAA:"
@@ -33,7 +31,7 @@ const val serverPort = 8888
 
 fun getControlSum(data: ByteArray): UShort {
     return data.asIterable().chunked(Short.SIZE_BYTES) {buffer -> //Short is 2 byte
-        var result: UInt = 0u
+        var result = 0u
         for (i in 0 until min(Short.SIZE_BYTES, buffer.size)) {
             result += (buffer[i].toUByte()).toUInt() shl (8 * (Short.SIZE_BYTES - 1 - i))
         }
