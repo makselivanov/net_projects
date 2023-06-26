@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.seconds
 
 //TODO change checksum?
 
-const val possiblityOfLose = 0.3
+const val possibilityOfLose = 0.3
 const val helloPrefix     = "HELOO:"
 const val dataPrefix      = "DATAA:"
 const val endOfFilePrefix = "EOFIL:"
@@ -170,7 +170,7 @@ class StopAndWaitProtocol(name: String = "") {
     }
 
     private suspend fun sendSocket(datagram: Datagram) {
-        if (Random.nextDouble() > possiblityOfLose) {
+        if (Random.nextDouble() > possibilityOfLose) {
             socket.send(datagram)
         }
     }
