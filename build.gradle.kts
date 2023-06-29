@@ -15,7 +15,7 @@ kotlin {
     linuxX64 {
         binaries {
             executable {
-                entryPoint = "client.main"
+                entryPoint = "main"
             }
         }
     }
