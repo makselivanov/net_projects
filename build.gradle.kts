@@ -5,6 +5,7 @@ plugins {
 
 group = "org.example"
 version = "1.0-SNAPSHOT"
+val ktorVersion: String by project
 
 repositories {
     mavenCentral()
@@ -12,6 +13,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    implementation("io.ktor:ktor-network:$ktorVersion")
 }
 
 tasks.test {
