@@ -4,19 +4,16 @@ import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.properties.Delegates
 import kotlin.system.measureNanoTime
-import kotlin.system.measureTimeMillis
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 
 const val SERVER = "0:0:0:0:0:0:0:0"
 const val PORT = 8888
 const val N = 10
-const val LEN = 40
 val TIMER = 1.seconds
 
 fun nanoToMilliDecimal(nano: Long) : Double {
