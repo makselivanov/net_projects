@@ -56,7 +56,7 @@ class IcmpProtocol {
                 inet_pton(AF_INET, endPoint, sin_addr.ptr)
             }
             val icmpHeader = alloc<icmphdr>().apply {
-                memset(this.ptr, 0, sizeOf<icmphdr>().convert()) //TODO add checksum
+                memset(this.ptr, 0, sizeOf<icmphdr>().convert())
                 type = ICMP_ECHO.convert()
                 code = 0.convert()
                 checksum = 0.convert()
@@ -68,7 +68,7 @@ class IcmpProtocol {
             for (index in 1..hopsMax) {
                 print("${index.toString().padStart(2, ' ')}  ")
                 val ttl: IntVar = alloc<IntVar>().apply {
-                    value = index //FIXME
+                    value = index
                 }
                 setsockopt(sock, IPPROTO_IP, IP_TTL, ttl.ptr, sizeOf<IntVar>().convert())
                 val readSet: fd_set = alloc()
@@ -117,11 +117,11 @@ class IcmpProtocol {
                 val sLen: socklen_t = 0.convert()
                 rc = recvfrom(sock, data.refTo(0), data.size.convert(), 0, null, sLen.objcPtr().toLong().toCPointer())
                 if (rc <= 0) {
-                    perror("recvfrom");
-                    break;
+                    perror("recvfrom")
+                    break
                 } else if (rc < sizeOf<icmphdr>() + sizeOf<iphdr>() ) {
-                    println("Error, got short IP + ICMP packet, $rc bytes\n");
-                    break;
+                    println("Error, got short IP + ICMP packet, $rc bytes\n")
+                    break
                 }
                 val ipHeader = alloc<iphdr>()
                 memcpy(ipHeader.ptr, data.refTo(0.convert()), sizeOf<iphdr>().convert())
