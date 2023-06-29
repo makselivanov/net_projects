@@ -71,9 +71,9 @@ class IcmpProtocol {
                     value = index //FIXME
                 }
                 setsockopt(sock, IPPROTO_IP, IP_TTL, ttl.ptr, sizeOf<IntVar>().convert())
-                var readSet: fd_set = alloc()
-                var timeout: timeval = alloc()
-                var rcvHeader: icmphdr = alloc()
+                val readSet: fd_set = alloc()
+                val timeout: timeval = alloc()
+                val rcvHeader: icmphdr = alloc()
                 with(timeout) {
                     tv_sec = timeWait.convert()
                     tv_usec = 0
@@ -114,7 +114,7 @@ class IcmpProtocol {
                     return
                 }
                 //val addrFrom = alloc<sockaddr_in>() ??
-                var sLen: socklen_t = 0.convert()
+                val sLen: socklen_t = 0.convert()
                 rc = recvfrom(sock, data.refTo(0), data.size.convert(), 0, null, sLen.objcPtr().toLong().toCPointer())
                 if (rc <= 0) {
                     perror("recvfrom");
