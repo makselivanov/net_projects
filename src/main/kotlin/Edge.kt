@@ -1,0 +1,1 @@
+data class Edge(var left: NetworkNode, var right: NetworkNode)
